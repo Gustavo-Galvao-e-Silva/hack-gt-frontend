@@ -1,128 +1,206 @@
 "use client"
-
 import { useState } from 'react';
-import dynamic from "next/dynamic";
-import "vis-network/styles/vis-network.css";
+import { Upload, File, X } from 'lucide-react';
 
-import GraphSidebar from "@/components/graph-sidebar";
+export default function FileUploadComponent() {
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [filePath, setFilePath] = useState('');
+    const [isDragOver, setIsDragOver] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadStatus, setUploadStatus] = useState(null);
 
-const Graph = dynamic(() => import("react-vis-network-graph"), { ssr: false });
+    const handleFileSelect = (file) => {
+        setSelectedFile(file);
+    };
 
-// Sample data with enhanced node information
-const graphData = {
-  nodes: [
-    {
-      id: "Cell Theory",
-      label: "Cell Theory",
-      connections: ["Prokaryotic Cells", "Eukaryotic Cells"],
-      color: "#FFD700",
-      description: "The cell theory states that all living things are composed of one or more cells, the cell is the basic unit of life, and all cells arise from pre-existing cells.",
-      keywords: ["Basic unit of life", "Living organisms", "Cell division", "Microscopy"]
-    },
-    {
-      id: "Prokaryotic Cells",
-      label: "Prokaryotic Cells",
-      color: "#FF6347",
-      connections: ["Cell Theory", "Eukaryotic Cells"],
-      description: "Cells that lack a membrane-bound nucleus and organelles. Their genetic material is freely suspended in the cytoplasm.",
-      keywords: ["No nucleus", "Bacteria", "Archaea", "Simple structure"]
-    },
-    {
-      id: "Eukaryotic Cells",
-      label: "Eukaryotic Cells",
-      color: "#4682B4",
-      connections: ["Cell Theory", "Prokaryotic Cells"],
-      description: "Cells that contain a membrane-bound nucleus and specialized organelles. Found in plants, animals, fungi, and protists.",
-      keywords: ["Nucleus", "Organelles", "Complex structure", "Membrane-bound"]
-    },
-    {
-      id: "DNA Structure",
-      label: "DNA Structure",
-      color: "#32CD32",
-      connections: ["DNA Function"],
-      description: "DNA is a double helix structure composed of nucleotides containing four bases: adenine, thymine, guanine, and cytosine.",
-      keywords: ["Double helix", "Nucleotides", "Base pairs", "Genetic code"]
-    },
-  ],
-  edges: [
-    { from: "Cell Theory", to: "Prokaryotic Cells" },
-    { from: "Cell Theory", to: "Eukaryotic Cells" },
-    { from: "Prokaryotic Cells", to: "Eukaryotic Cells" },
-    { from: "DNA Structure", to: "DNA Function" },
-  ],
-};
+    const handleFileInputChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            handleFileSelect(file);
+        }
+    };
 
-const options = {
-  nodes: {
-    shape: "dot",
-    size: 20,
-    font: { size: 16 },
-  },
-  edges: {
-    arrows: {
-      to: false
-    },
-    color: {
-      color: "#999",
-      highlight: "#555"
-    },
-    smooth: {
-      type: "continuous"
-    },
-  },
-  physics: {
-    enabled: true
-  },
-  interaction: {
-    dragNodes: true,
-    dragView: true,
-    zoomView: true
-  },
-};
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        setIsDragOver(true);
+    };
 
-function GraphComponent({ onNodeSelect }) {
-  const handleNodeClick = (params) => {
-    if (params.nodes.length > 0) {
-      const nodeId = params.nodes[0];
-      const selectedNode = graphData.nodes.find(node => node.id === nodeId);
-      onNodeSelect(selectedNode);
-    }
-  };
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        setIsDragOver(false);
+    };
 
-  return (
-      <div className="w-full h-full">
-        <Graph
-            graph={graphData}
-            options={options}
-            events={{ selectNode: handleNodeClick }}
-        />
-      </div>
-  );
-}
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            handleFileSelect(file);
+        }
+    };
 
-// Main Component
-export default function MyGraph() {
-  const [selectedNode, setSelectedNode] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+    const handleUpload = async () => {
+        if (!selectedFile || !filePath) return;
 
-  const handleNodeSelect = (node) => {
-    setSelectedNode(node);
-    // Auto-open sidebar when a node is selected
-    if (node && !sidebarOpen) {
-      setSidebarOpen(true);
-    }
-  };
+        setIsUploading(true);
+        setUploadStatus(null);
 
-  return (
-      <div className="relative w-screen h-screen bg-gray-50">
-        <GraphComponent onNodeSelect={handleNodeSelect} />
-        <div className="absolute top-0 right-0 h-screen">
-          <GraphSidebar
-              selectedNode={selectedNode}
-              isOpen={sidebarOpen}
-              onToggle={() => setSidebarOpen(!sidebarOpen)}
-          />
+        try {
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('file_path', filePath);
+
+            const response = await fetch('http://localhost:8000/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                setUploadStatus({ type: 'success', message: 'File uploaded successfully!' });
+                console.log('Upload successful:', result);
+
+                // Reset form after successful upload
+                setTimeout(() => {
+                    setSelectedFile(null);
+                    setFilePath('');
+                    setUploadStatus(null);
+                }, 2000);
+            } else {
+                const error = await response.json();
+                setUploadStatus({ type: 'error', message: error.detail || 'Upload failed' });
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            setUploadStatus({ type: 'error', message: 'Network error. Make sure your FastAPI server is running on localhost:8000' });
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const clearFile = () => {
+        setSelectedFile(null);
+    };
+
+    const formatFileSize = (bytes) => {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    };
+
+    return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+            <div className="w-full max-w-md">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+
+                    {/* Header */}
+                    <div className="text-center mb-8">
+                        <h1 className="text-2xl font-light text-gray-900 mb-2">Upload File</h1>
+                        <p className="text-gray-500 text-sm">Choose a file and specify its destination</p>
+                    </div>
+
+                    {/* File Path Input */}
+                    <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                            Destination Path
+                        </label>
+                        <input
+                            type="text"
+                            value={filePath}
+                            onChange={(e) => setFilePath(e.target.value)}
+                            placeholder="/home/user/documents/"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all text-sm"
+                        />
+                    </div>
+
+                    {/* File Upload Area */}
+                    <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                            Select File
+                        </label>
+
+                        {!selectedFile ? (
+                            <div
+                                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
+                                    isDragOver
+                                        ? 'border-gray-400 bg-gray-50'
+                                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-25'
+                                }`}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                                onClick={() => document.getElementById('file-input').click()}
+                            >
+                                <Upload className="mx-auto h-8 w-8 text-gray-400 mb-3" />
+                                <p className="text-sm text-gray-600 mb-1">
+                                    Click to browse or drag and drop
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                    Any file type supported
+                                </p>
+                                <input
+                                    id="file-input"
+                                    type="file"
+                                    className="hidden"
+                                    onChange={handleFileInputChange}
+                                />
+                            </div>
+                        ) : (
+                            <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                        <File className="h-8 w-8 text-gray-400" />
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-900 truncate max-w-48">
+                                                {selectedFile.name}
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                                {formatFileSize(selectedFile.size)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={clearFile}
+                                        className="p-1 hover:bg-gray-200 rounded-lg transition-colors"
+                                    >
+                                        <X className="h-4 w-4 text-gray-400" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Upload Button */}
+                    {selectedFile && filePath && (
+                        <div className="animate-in slide-in-from-bottom-4 duration-300">
+                            <button
+                                onClick={handleUpload}
+                                disabled={isUploading}
+                                className={`w-full py-3 px-4 rounded-xl font-medium text-sm transition-colors ${
+                                    isUploading
+                                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                                        : 'bg-gray-900 text-white hover:bg-gray-800'
+                                }`}
+                            >
+                                {isUploading ? 'Uploading...' : 'Upload File'}
+                            </button>
+
+                            {/* Status Message */}
+                            {uploadStatus && (
+                                <div className={`mt-3 p-3 rounded-lg text-sm ${
+                                    uploadStatus.type === 'success'
+                                        ? 'bg-green-50 text-green-700 border border-green-200'
+                                        : 'bg-red-50 text-red-700 border border-red-200'
+                                }`}>
+                                    {uploadStatus.message}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
-      </div>
-  );
+    );
 }
