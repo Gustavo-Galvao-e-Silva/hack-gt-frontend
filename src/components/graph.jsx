@@ -46,7 +46,7 @@ function GraphComponent({ onNodeSelect, graphData}) {
     };
 
     return (
-        <div className="w-full h-full">
+        <div className="graph component w-full h-full">
             <Graph
                 graph={graphData}
                 options={options}

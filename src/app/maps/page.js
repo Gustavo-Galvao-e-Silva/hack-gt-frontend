@@ -1,18 +1,39 @@
 "use client"
 import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import GraphCard from '@/components/graph-card';
 
 export default function NotebookWorkspace() {
     const router = useRouter();
+    const [workspaces, setWorkspaces] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    const workspaces = [
-        { id: 1, title: "My First Notebook" },
-        { id: 2, title: "Data Analysis" },
-        { id: 3, title: "ML Project" }
-    ];
+     useEffect(() => {
+        const fetchWorkspaces = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch(`http://localhost:8000/workspaces/1`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch graph data');
+                }
+                const data = await response.json();
+                setWorkspaces(data);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchWorkspaces();
+    }, []);
+
+    if (loading) return <div>Loading workspaces...</div>;
+    if (error) return <div>Error: {error}</div>;
 
     const handleNotebookClick = (workspace) => {
-        router.push(`/maps/${workspace.id}`);
+        router.push(`/maps/${workspace.workspacesID}`);
     };
 
     return (
@@ -26,7 +47,7 @@ export default function NotebookWorkspace() {
                 <div className="space-y-4">
                     {workspaces.map((workspace) => (
                         <GraphCard
-                            key={workspace.id}
+                            key={workspace.workspacesID}
                             title={workspace.title}
                             onClick={() => handleNotebookClick(workspace)}
                         />

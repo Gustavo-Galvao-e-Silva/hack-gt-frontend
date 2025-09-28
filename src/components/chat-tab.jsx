@@ -6,7 +6,7 @@ export default function ChatTab({ messages = [], setMessages, isLoading = false,
   const [notes, setNotes] = useState("");
   const messagesEndRef = useRef(null);
 
-  const agentId = "weatherAgent";
+  const agentId = "weatherAgent"; // matches the workflow ID
 
   // Auto-scroll to bottom when messages change
   const scrollToBottom = () => {
@@ -27,13 +27,16 @@ export default function ChatTab({ messages = [], setMessages, isLoading = false,
     setMessages((msgs) => [...(msgs || []), { role: "user", content: text }]);
     
     try {
-      const res = await axios.post(`http://localhost:4111/api/agents/${agentId}/generate`, {
-        messages: [{ role: "user", content: text }],
-      });
-      
-      console.log('Full response:', res.data);
-      const reply = res.data.text || "No reply";
-      
+      const res = await axios.post(
+  `http://localhost:4111/api/agents/${agentId}/generate`,
+  {
+    messages: [{ role: "user", content: text }],
+  }
+);
+
+console.log('Full response:', res.data);
+const reply = res.data.text || "No reply";
+
       setMessages((msgs) => [...(msgs || []), { role: "assistant", content: reply }]);
     } catch (err) {
       console.error('Error details:', err);

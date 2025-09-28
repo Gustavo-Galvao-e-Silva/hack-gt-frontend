@@ -29,24 +29,6 @@ export default function BottomNavBar() {
 
     return (
         <div className="min-h-screen bg-gray-50 relative">
-            {/* Main content area - this would be your page content */}
-            <div className="pb-20 p-6">
-                <div className="max-w-md mx-auto">
-                    <div className="bg-white rounded-lg p-6 shadow-sm">
-                        <p className="text-gray-600">
-                            This is your main content area. The bottom navigation bar will stay fixed
-                            at the bottom of the screen while users scroll through your content.
-                        </p>
-                        <div className="mt-4 space-y-2">
-                            {Array.from({ length: 10 }, (_, i) => (
-                                <div key={i} className="h-16 bg-gray-100 rounded-lg flex items-center px-4">
-                                    <span className="text-gray-500">Sample content item {i + 1}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             {/* Bottom Navigation Bar */}
             <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">

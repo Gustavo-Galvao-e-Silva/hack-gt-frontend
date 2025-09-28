@@ -47,13 +47,27 @@ export default function FileUploadComponent() {
 
         try {
             const formData = new FormData();
-            formData.append('file', selectedFile);
-            formData.append('file_path', filePath);
+            // formData.append('file', selectedFile);
+            // formData.append('file_path', filePath);
 
-            const response = await fetch('http://localhost:8000/upload', {
-                method: 'POST',
+            // const response = await fetch('http://localhost:8000/upload', {
+            //     method: 'POST',
+            //     body: formData,
+            // });
+            formData.append("user_id", 1); // or get dynamically from logged-in user
+            formData.append("workspace_title", filePath); // reuse your text input as workspace name
+            formData.append("description", "Uploaded via UI");
+            formData.append("file", selectedFile);
+
+            for (let pair of formData.entries()) {
+                console.log(pair[0] + ": ", pair[1]);
+        }
+
+            const response = await fetch("http://localhost:8000/workspaces/upload", {
+                method: "POST",
                 body: formData,
             });
+            //
 
             if (response.ok) {
                 const result = await response.json();
@@ -66,10 +80,26 @@ export default function FileUploadComponent() {
                     setFilePath('');
                     setUploadStatus(null);
                 }, 2000);
+            // } else {
+            //     const error = await response.json();
+            //     setUploadStatus({ type: 'error', message: error.detail || 'Upload failed' });
+            // }
             } else {
                 const error = await response.json();
-                setUploadStatus({ type: 'error', message: error.detail || 'Upload failed' });
+                let message;
+
+                if (typeof error.detail === "string") {
+                    message = error.detail;
+                } else if (Array.isArray(error.detail)) {
+                    // take first error message
+                    message = error.detail[0]?.msg || "Upload failed";
+                } else {
+                    message = "Upload failed";
+                }
+
+                setUploadStatus({ type: "error", message });
             }
+            //
         } catch (error) {
             console.error('Upload error:', error);
             setUploadStatus({ type: 'error', message: 'Network error. Make sure your FastAPI server is running on localhost:8000' });
