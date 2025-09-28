@@ -29,7 +29,7 @@ export default function GraphSidebar({ selectedNode, isOpen, onToggle }) {
                 isOpen ? 'w-80' : 'w-0'
             } overflow-hidden`}>
                 {/* Tab Headers */}
-                <div className="flex border-b border-gray-200 min-w-80">
+                <div className="flex border-b border-gray-200 flex-shrink-0" style={{ minWidth: '320px' }}>
                     <button
                         onClick={() => setActiveTab('info')}
                         className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
@@ -48,12 +48,12 @@ export default function GraphSidebar({ selectedNode, isOpen, onToggle }) {
                                 : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                         }`}
                     >
-                        Notes
+                        Chat
                     </button>
                 </div>
 
                 {/* Tab Content */}
-                <div className="flex-1 overflow-y-auto min-w-80">
+                <div className="flex-1 overflow-hidden" style={{ minWidth: '320px' }}>
                     {activeTab === 'info' ? (
                         <NodeInfoTab selectedNode={selectedNode} />
                     ) : (
