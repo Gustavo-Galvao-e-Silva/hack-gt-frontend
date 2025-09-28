@@ -4,6 +4,10 @@ import ChatTab from "@/components/chat-tab";
 
 export default function GraphSidebar({ selectedNode, isOpen, onToggle }) {
     const [activeTab, setActiveTab] = useState('info');
+    
+    // Lift chat state to parent component for persistence
+    const [messages, setMessages] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
 
     return (
         <div className="relative flex">
@@ -28,8 +32,8 @@ export default function GraphSidebar({ selectedNode, isOpen, onToggle }) {
             <div className={`bg-white border-l border-gray-300 flex flex-col h-screen transition-all duration-300 ease-in-out ${
                 isOpen ? 'w-80' : 'w-0'
             } overflow-hidden`}>
-                {/* Tab Headers */}
-                <div className="flex border-b border-gray-200 min-w-80">
+                {/* Tab Headers - Fixed at top */}
+                <div className="flex border-b border-gray-200 flex-shrink-0 bg-white z-10" style={{ minWidth: '320px' }}>
                     <button
                         onClick={() => setActiveTab('info')}
                         className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
@@ -48,16 +52,21 @@ export default function GraphSidebar({ selectedNode, isOpen, onToggle }) {
                                 : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                         }`}
                     >
-                        Notes
+                        Chat
                     </button>
                 </div>
 
-                {/* Tab Content */}
-                <div className="flex-1 overflow-y-auto min-w-80">
+                {/* Tab Content - Takes remaining space with proper constraints */}
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden" style={{ minWidth: '320px' }}>
                     {activeTab === 'info' ? (
                         <NodeInfoTab selectedNode={selectedNode} />
                     ) : (
-                        <ChatTab />
+                        <ChatTab 
+                            messages={messages}
+                            setMessages={setMessages}
+                            isLoading={isLoading}
+                            setIsLoading={setIsLoading}
+                        />
                     )}
                 </div>
             </div>
